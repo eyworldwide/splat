@@ -7,6 +7,7 @@ import {
 	BufferUsage,
 	Camera,
 	IndexFormat,
+	Logger,
 	Material,
 	Matrix,
 	MeshRenderer,
@@ -28,6 +29,8 @@ import { cameras } from './cameras';
 import { createWorker } from './worker';
 import { shader } from "./shader";
 import { getProjectionMatrix, getViewMatrix, invert4, multiply4, rotate4, translate4 } from "./math";
+
+Logger.enable()
 
 export async function createRuntime() {
 	let camera = cameras[0];

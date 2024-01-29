@@ -127,6 +127,9 @@ export async function createRuntime() {
 			);
 
 			engine.canvas.resizeByClientSize();
+
+			shaderData.setVector2("viewport", new Vector2(innerWidth, innerHeight));
+
 			cameraComponent.projectionMatrix = new Matrix(...projectionMatrix); 
 		};
 

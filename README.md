@@ -1,6 +1,6 @@
 # splat
 
-Hat off to https://github.com/antimatter15/splat/blob/main/main.js#L844C8-L844C28
+Hat off to https://github.com/antimatter15/splat/blob/main/main.js
 
 ## Dev
 

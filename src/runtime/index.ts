@@ -153,8 +153,8 @@ export async function createRuntime() {
 			} else if (e.data.texdata) {
 				const { texdata, texwidth, texheight } = e.data;
 
-				const texture = new Texture2D(engine, texwidth, texheight, TextureFormat.R32G32B32A32, false);
-				texture.setPixelBuffer(new Float32Array(texdata));
+				const texture = new Texture2D(engine, texwidth, texheight, TextureFormat.R32G32B32A32_UInt, false);
+				texture.setPixelBuffer(texdata);
 				texture.wrapModeU = texture.wrapModeV = TextureWrapMode.Clamp;
 				texture.filterMode = TextureFilterMode.Point;
 

@@ -136,7 +136,7 @@ export function createWorker(self) {
           lastVertexCount = vertexCount;
       }
 
-      console.time("sort");
+    //   console.time("sort");
       let maxDepth = -Infinity;
       let minDepth = Infinity;
       let sizeList = new Int32Array(vertexCount);
@@ -166,7 +166,7 @@ export function createWorker(self) {
       for (let i = 0; i < vertexCount; i++)
           depthIndex[starts0[sizeList[i]]++] = i;
 
-      console.timeEnd("sort");
+    //   console.timeEnd("sort");
 
       lastProj = viewProj;
       self.postMessage({ depthIndex, viewProj, vertexCount }, [
@@ -241,9 +241,9 @@ export function createWorker(self) {
       }
       console.timeEnd("calculate importance");
 
-      console.time("sort");
+    //   console.time("sort");
       sizeIndex.sort((b, a) => sizeList[a] - sizeList[b]);
-      console.timeEnd("sort");
+    //   console.timeEnd("sort");
 
       // 6*4 + 4 + 4 = 8*4
       // XYZ - Position (Float32)

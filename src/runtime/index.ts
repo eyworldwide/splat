@@ -6,6 +6,7 @@ import {
 	BufferMesh,
 	BufferUsage,
 	Camera,
+	CullMode,
 	IndexFormat,
 	Logger,
 	Material,
@@ -76,7 +77,7 @@ export async function createRuntime() {
 
 		const engine = await WebGLEngine.create({ canvas: "canvas", 
 			graphicDeviceOptions: {
-				antialias: true
+				alpha: true
 			}
 		});
 
@@ -87,6 +88,8 @@ export async function createRuntime() {
 		const cameraEntity = rootEntity.createChild("camera");
 		const cameraComponent = cameraEntity.addComponent(Camera);
 		cameraComponent.enableFrustumCulling = false;
+
+		scene.background.solidColor.set(0, 0, 0, 0);
 
 		cameraEntity.addComponent(class extends Script {
 			onUpdate(deltaTime){
@@ -106,6 +109,7 @@ export async function createRuntime() {
 
 		const material = new Material(engine, shader);
 		meshRenderer.setMaterial(material);
+		material.renderState.rasterState.cullMode = CullMode.Off;
 
 		const shaderData = material.shaderData;
 		const renderState = material.renderState;
@@ -139,6 +143,36 @@ export async function createRuntime() {
 		window.addEventListener("resize", resize);
 		resize();
 
+		const vertices: Float32Array = new Float32Array([-2, -2, 2, -2, 2, 2, -2, 2]);
+
+		const vertexBuffer = new Buffer(
+			engine,
+			BufferBindFlag.VertexBuffer,
+			vertices,
+			BufferUsage.Static
+		);
+
+		const vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 0);
+
+		const indexDataLength =270491 * 4 
+		const indexBuffer = new Buffer(
+			engine,
+			BufferBindFlag.VertexBuffer,
+			indexDataLength,
+			BufferUsage.Dynamic
+		);
+
+		const indexBufferBinding = new VertexBufferBinding(indexBuffer, 0);
+
+		geometry.setVertexElements([
+			new VertexElement("position", 0, VertexElementFormat.Vector2, 0),
+			new VertexElement("index", 0, VertexElementFormat.Float, 1, 1),
+		]);
+
+		geometry.setVertexBufferBindings(([vertexBufferBinding, indexBufferBinding]));
+
+		geometry.addSubMesh(0, 4, MeshTopology.TriangleFan);
+
 		worker.onmessage = (e) => {
 			if (e.data.buffer) {
 				splatData = new Uint8Array(e.data.buffer);
@@ -162,35 +196,7 @@ export async function createRuntime() {
 			} else if (e.data.depthIndex) {
 				const { depthIndex } = e.data;
 
-				const vertices: Float32Array = new Float32Array([-2, -2, 2, -2, 2, 2, -2, 2]);
-
-				const vertexBuffer = new Buffer(
-					engine,
-					BufferBindFlag.VertexBuffer,
-					vertices,
-					BufferUsage.Static
-				);
-
-				const vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 0);
-
-				const indexBuffer = new Buffer(
-					engine,
-					BufferBindFlag.VertexBuffer,
-					new Float32Array(depthIndex),
-					BufferUsage.Dynamic
-				);
-
-				const indexBufferBinding = new VertexBufferBinding(indexBuffer, 0);
-
-				geometry.setVertexElements([
-					new VertexElement("position", 0, VertexElementFormat.Vector2, 0),
-					new VertexElement("index", 0, VertexElementFormat.Float,1,1),
-				]);
-
-				geometry.setVertexBufferBindings(([vertexBufferBinding, indexBufferBinding]));
-
-				const subMesh = geometry.addSubMesh(0, 4, MeshTopology.TriangleFan);
-
+				indexBuffer.setData(depthIndex);
 				vertexCount = e.data.vertexCount;
 			}
 		};
@@ -348,7 +354,6 @@ export async function createRuntime() {
 
 			if (vertexCount > 0) {
 				cameraComponent.viewMatrix = new Matrix(...actualViewMatrix);
-				console.log('vertexCount', vertexCount)
 				geometry.instanceCount = vertexCount;
 			} else {
 				start = Date.now() + 2000;

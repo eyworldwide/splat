@@ -12,7 +12,7 @@ export default defineConfig({
   optimizeDeps: {
     exclude: [
       "@galacean/engine",
-      "@oasis-engine/core",
+      "@galacean/engine-core",
       "@oasis-engine/lottie",
       "@oasis-engine/math",
       "@oasis-engine/rhi-webgl",

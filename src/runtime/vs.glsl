@@ -7,7 +7,7 @@ uniform vec2 focal;
 uniform vec2 viewport;
 
 in vec2 position;
-in int index;
+in float index;
 
 out vec4 vColor;
 out vec2 vPosition;

@@ -156,7 +156,6 @@ export async function createRuntime() {
 				const texture = new Texture2D(engine, texwidth, texheight, TextureFormat.R32G32B32A32_UInt, false);
 				texture.setPixelBuffer(texdata);
 				texture.wrapModeU = texture.wrapModeV = TextureWrapMode.Clamp;
-				texture.filterMode = TextureFilterMode.Point;
 
 				shaderData.setTexture("u_texture", texture);
 
@@ -172,30 +171,25 @@ export async function createRuntime() {
 					BufferUsage.Static
 				);
 
-				const vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 16);
+				const vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 0);
 
 				const indexBuffer = new Buffer(
 					engine,
 					BufferBindFlag.VertexBuffer,
-					depthIndex,
+					new Float32Array(depthIndex),
 					BufferUsage.Dynamic
 				);
 
-				const indexBufferBinding = new VertexBufferBinding(indexBuffer, 8);
-
-				geometry.setVertexBufferBindings(([vertexBufferBinding, indexBufferBinding]));
+				const indexBufferBinding = new VertexBufferBinding(indexBuffer, 0);
 
 				geometry.setVertexElements([
 					new VertexElement("position", 0, VertexElementFormat.Vector2, 0),
-					new VertexElement("index", 0, VertexElementFormat.Float, 1),
+					new VertexElement("index", 0, VertexElementFormat.Float,1,1),
 				]);
 
-				geometry.setIndexBufferBinding(indexBuffer, IndexFormat.UInt32);
+				geometry.setVertexBufferBindings(([vertexBufferBinding, indexBufferBinding]));
 
-				const subMesh = geometry.addSubMesh(0, depthIndex.length);
-				subMesh.topology = MeshTopology.TriangleFan;
-				subMesh.start = 0;
-				subMesh.count = 4;
+				const subMesh = geometry.addSubMesh(0, 4, MeshTopology.TriangleFan);
 
 				vertexCount = e.data.vertexCount;
 			}
@@ -354,6 +348,7 @@ export async function createRuntime() {
 
 			if (vertexCount > 0) {
 				cameraComponent.viewMatrix = new Matrix(...actualViewMatrix);
+				console.log('vertexCount', vertexCount)
 				geometry.instanceCount = vertexCount;
 			} else {
 				start = Date.now() + 2000;

@@ -241,9 +241,9 @@ export function createWorker(self) {
       }
       console.timeEnd("calculate importance");
 
-    //   console.time("sort");
+      console.time("sort");
       sizeIndex.sort((b, a) => sizeList[a] - sizeList[b]);
-    //   console.timeEnd("sort");
+      console.timeEnd("sort");
 
       // 6*4 + 4 + 4 = 8*4
       // XYZ - Position (Float32)

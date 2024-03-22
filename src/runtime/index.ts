@@ -75,7 +75,8 @@ export async function createRuntime() {
 			),
 		);
 
-		const engine = await WebGLEngine.create({ canvas: "canvas", 
+		const engine = await WebGLEngine.create({
+			canvas: "canvas",
 			graphicDeviceOptions: {
 				alpha: true
 			}
@@ -89,13 +90,13 @@ export async function createRuntime() {
 		const cameraComponent = cameraEntity.addComponent(Camera);
 		cameraComponent.enableFrustumCulling = false;
 
-		scene.background.solidColor.set(0, 0, 0, 0);
+		scene.background.solidColor.set(0, 0.0, 0, 0.0);
 
-		cameraEntity.addComponent(class extends Script {
-			onUpdate(deltaTime){
-				frame(deltaTime);
-			}
-		})
+		// cameraEntity.addComponent(class extends Script {
+		// 	onUpdate(deltaTime){
+		// 		frame(deltaTime);
+		// 	}
+		// })
 
 		engine.run();
 
@@ -137,7 +138,7 @@ export async function createRuntime() {
 
 			shaderData.setVector2("viewport", new Vector2(innerWidth, innerHeight));
 
-			cameraComponent.projectionMatrix = new Matrix(...projectionMatrix); 
+			cameraComponent.projectionMatrix = new Matrix(...projectionMatrix);
 		};
 
 		window.addEventListener("resize", resize);
@@ -154,7 +155,7 @@ export async function createRuntime() {
 
 		const vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 0);
 
-		const indexDataLength =270491 * 4 
+		const indexDataLength = 270491 * 4
 		const indexBuffer = new Buffer(
 			engine,
 			BufferBindFlag.VertexBuffer,
@@ -196,12 +197,13 @@ export async function createRuntime() {
 			} else if (e.data.depthIndex) {
 				const { depthIndex } = e.data;
 
-				indexBuffer.setData(depthIndex);
+				// debugger;
+				indexBuffer.setData(new Float32Array(depthIndex));
 				vertexCount = e.data.vertexCount;
 			}
 		};
 
-		const frame = (deltaTime) => {
+		const frame = () => {
 			let inv = invert4(viewMatrix);
 			let shiftKey = activeKeys.includes("Shift") || activeKeys.includes("ShiftLeft") || activeKeys.includes("ShiftRight")
 
@@ -358,7 +360,10 @@ export async function createRuntime() {
 			} else {
 				start = Date.now() + 2000;
 			}
+
+			requestAnimationFrame(frame);
 		};
+
 
 		let activeKeys = [];
 		let currentCameraIndex = 0;
@@ -649,12 +654,16 @@ export async function createRuntime() {
 				lastVertexCount = vertexCount;
 			}
 		}
-		if (!stopLoading)
+		if (!stopLoading) {
 			worker.postMessage({
 				buffer: splatData.buffer,
 				vertexCount: Math.floor(bytesRead / rowLength),
 			});
+		}
+
+		frame();
 	}
+
 
 	main().catch((err) => {
 		console.error(err.toString());

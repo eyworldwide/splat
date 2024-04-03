@@ -1,5 +1,5 @@
 import React from "react";
-import { createRuntime } from "./runtime";
+import { createRuntime } from ".";
 
 function App() {
 	React.useEffect(() => {

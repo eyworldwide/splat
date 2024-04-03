@@ -8,9 +8,10 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@galacean/engine": "^1.2.0-alpha.9",
+    "@galacean/engine-toolkit-controls": "1.2.0-beta.2",
     "react": "^17.0.0",
-    "react-dom": "^17.0.0",
-    "@galacean/engine": "^1.2.0-alpha.9"
+    "react-dom": "^17.0.0"
   },
   "devDependencies": {
     "@types/react": "^17.0.0",

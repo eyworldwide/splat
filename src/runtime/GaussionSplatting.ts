@@ -1,10 +1,10 @@
-import { BlendFactor, BlendOperation, Buffer, BufferBindFlag, BufferMesh, BufferUsage, CullMode, Material, MeshRenderer, MeshTopology, Script, ShaderData, VertexBufferBinding, VertexElement, VertexElementFormat } from "@galacean/engine";
+import { BlendFactor, BlendOperation, Buffer, BufferBindFlag, BufferMesh, BufferUsage, CullMode, Material, MeshRenderer, MeshTopology, Script, ShaderData, Texture2D, TextureFormat, TextureWrapMode, VertexBufferBinding, VertexElement, VertexElementFormat } from "@galacean/engine";
 import { shader } from "./shader";
 
 export class GaussianSplatting extends Script {
   shaderData: ShaderData;
-  geometry: BufferMesh;
-  indexBuffer: Buffer;
+  private geometry: BufferMesh;
+  private indexBuffer: Buffer;
 
   onAwake(): void {
     const meshRenderer = this.entity.addComponent(MeshRenderer);
@@ -63,5 +63,21 @@ export class GaussianSplatting extends Script {
     this.shaderData = shaderData;
     this.geometry = geometry;
     this.indexBuffer = indexBuffer;
+  }
+
+  setTexture(texdata: ArrayBufferView, width: number, height: number) {
+    const texture = new Texture2D(this.engine, width, height, TextureFormat.R32G32B32A32_UInt, false);
+    texture.setPixelBuffer(texdata);
+    texture.wrapModeU = texture.wrapModeV = TextureWrapMode.Clamp;
+
+    this.shaderData.setTexture("u_texture", texture);
+  }
+
+  setInstanceCount(count: number) {
+    this.geometry.instanceCount = count;
+  }
+
+  setIndexBuffer(buffer: ArrayBufferView) {
+    this.indexBuffer.setData(buffer);
   }
 }

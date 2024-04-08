@@ -1,8 +1,7 @@
-import { Camera, Logger, Matrix, Vector2, WebGLEngine } from "@galacean/engine";
+import { Camera, Entity, Logger, Matrix, Vector2, WebGLEngine } from "@galacean/engine";
 import { GaussianSplatting } from "./runtime";
-import { cameras } from './runtime/cameras';
+import { cameras } from './cameras';
 import { getProjectionMatrix } from "./runtime/math";
-import { createWorker } from './runtime/worker';
 
 Logger.enable()
 
@@ -12,26 +11,6 @@ export async function createRuntime() {
 	const url = `https://media.reshot.ai/models/nike_next/model.splat`;
 	const viewMatrix = [0.95, 0.16, -0.26, 0, -0.16, 0.99, 0.01, 0, 0.26, 0.03, 0.97, 0, 0.01, -1.96, 2.82, 1];
 
-	const req = await fetch(url, {
-		mode: "cors", // no-cors, *cors, same-origin
-		credentials: "omit", // include, *same-origin, omit
-	});
-
-	console.log(req);
-
-	const reader = req.body.getReader();
-	let splatData = new Uint8Array(req.headers.get("content-length"));
-
-	const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-
-	const worker = new Worker(
-		URL.createObjectURL(
-			new Blob(["(", createWorker.toString(), ")(self)"], {
-				type: "application/javascript",
-			}),
-		),
-	);
-
 	const engine = await WebGLEngine.create({
 		canvas: "canvas",
 		graphicDeviceOptions: {
@@ -40,6 +19,7 @@ export async function createRuntime() {
 	});
 
 	const scene = engine.sceneManager.activeScene;
+	scene.background.solidColor.set(0, 0.0, 0, 0.0);
 	const rootEntity = scene.createRootEntity();
 
 	const cameraEntity = rootEntity.createChild("camera");
@@ -69,12 +49,15 @@ export async function createRuntime() {
 	// Vector3.add(position, direction, target);
 	// orbitControl.target = target;
 
-	scene.background.solidColor.set(0, 0.0, 0, 0.0);
-
 	engine.run();
 
-	const entity = rootEntity.createChild("mesh");
-	const splat = entity.addComponent(GaussianSplatting);
+	const entity = await engine.resourceManager.load<Entity>({urls: [url], type: "GaussianSplatting"})
+
+	rootEntity.addChild(entity);
+
+	const splat = entity.getComponent(GaussianSplatting);
+	splat.camera = cameraComponent;
+
 	const { shaderData } = splat;
 
 	const resize = () => {
@@ -86,69 +69,4 @@ export async function createRuntime() {
 
 	window.addEventListener("resize", resize);
 	resize();
-
-
-	worker.onmessage = (e) => {
-		if (e.data.buffer) {
-			splatData = new Uint8Array(e.data.buffer);
-			const blob = new Blob([splatData.buffer], {
-				type: "application/octet-stream",
-			});
-			const link = document.createElement("a");
-			link.download = "model.splat";
-			link.href = URL.createObjectURL(blob);
-			document.body.appendChild(link);
-			link.click();
-		} else if (e.data.texdata) {
-			const { texdata, texwidth, texheight } = e.data;
-			splat.setTexture(texdata, texwidth, texheight);
-		} else if (e.data.depthIndex) {
-			const { depthIndex } = e.data;
-
-			splat.setIndexBuffer(new Float32Array(depthIndex))
-			vertexCount = e.data.vertexCount;
-		}
-	};
-
-	const viewProjMatrix = new Matrix();
-
-	const frame = () => {
-		Matrix.multiply(cameraComponent.projectionMatrix, cameraComponent.viewMatrix, viewProjMatrix);
-		worker.postMessage({ view: viewProjMatrix.elements });
-
-		if (vertexCount > 0) {
-			splat.setInstanceCount(vertexCount)
-		}
-
-		requestAnimationFrame(frame);
-	};
-
-
-	let vertexCount = 0;
-
-	let bytesRead = 0;
-	let lastVertexCount = -1;
-
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-
-		splatData.set(value, bytesRead);
-		bytesRead += value.length;
-
-		if (vertexCount > lastVertexCount) {
-			worker.postMessage({
-				buffer: splatData.buffer,
-				vertexCount: Math.floor(bytesRead / rowLength),
-			});
-			lastVertexCount = vertexCount;
-		}
-	}
-
-	worker.postMessage({
-		buffer: splatData.buffer,
-		vertexCount: Math.floor(bytesRead / rowLength),
-	});
-
-	frame();
 }

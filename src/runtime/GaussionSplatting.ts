@@ -1,10 +1,46 @@
-import { BlendFactor, BlendOperation, Buffer, BufferBindFlag, BufferMesh, BufferUsage, CullMode, Material, MeshRenderer, MeshTopology, Script, ShaderData, Texture2D, TextureFormat, TextureWrapMode, VertexBufferBinding, VertexElement, VertexElementFormat } from "@galacean/engine";
+import { BlendFactor, BlendOperation, Buffer, BufferBindFlag, BufferMesh, BufferUsage, Camera, CullMode, Material, Matrix, MeshRenderer, MeshTopology, Script, ShaderData, Texture2D, TextureFormat, TextureWrapMode, VertexBufferBinding, VertexElement, VertexElementFormat } from "@galacean/engine";
 import { shader } from "./shader";
+import { createWorker } from "./worker";
 
 export class GaussianSplatting extends Script {
   shaderData: ShaderData;
   private geometry: BufferMesh;
   private indexBuffer: Buffer;
+  camera: Camera;
+  worker: Worker = new Worker(
+    URL.createObjectURL(
+      new Blob(["(", createWorker.toString(), ")(self)"], {
+        type: "application/javascript",
+      }),
+    ),
+  );;
+
+  constructor (entity) {
+    super(entity);
+
+    this.worker.onmessage = (e) => {
+      if (e.data.buffer) {
+        const splatData = new Uint8Array(e.data.buffer);
+        const blob = new Blob([splatData.buffer], {
+          type: "application/octet-stream",
+        });
+        const link = document.createElement("a");
+        link.download = "model.splat";
+        link.href = URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+      } else if (e.data.texdata) {
+        const { texdata, texwidth, texheight } = e.data;
+        this.setTexture(texdata, texwidth, texheight);
+      } else if (e.data.depthIndex) {
+        const { depthIndex } = e.data;
+
+        this.setIndexBuffer(new Float32Array(depthIndex))
+        this.setInstanceCount(e.data.vertexCount);
+      }
+    };
+    
+  }
 
   onAwake(): void {
     const meshRenderer = this.entity.addComponent(MeshRenderer);
@@ -79,5 +115,14 @@ export class GaussianSplatting extends Script {
 
   setIndexBuffer(buffer: ArrayBufferView) {
     this.indexBuffer.setData(buffer);
+  }
+
+  onUpdate () {
+    const viewProjMatrix = new Matrix();
+
+    if (this.camera) {
+      Matrix.multiply(this.camera.projectionMatrix, this.camera.viewMatrix, viewProjMatrix);
+      this.worker.postMessage({ view: viewProjMatrix.elements });
+    }
   }
 }
